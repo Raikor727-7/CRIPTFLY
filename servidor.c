@@ -2,8 +2,23 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <string.h>
+#include <process.h>  // _beginthreadex//
 
 #pragma comment(lib, "Ws2_32.lib")
+
+unsigned __stdcall receber(void *socket_desc) {
+    SOCKET sock = *(SOCKET*)socket_desc;
+    char buffer[512];
+    int bytes;
+
+    while ((bytes = recv(sock, buffer, sizeof(buffer)-1, 0)) > 0){
+       buffer[bytes] = '\0';
+       printf("\nCliente: %s\n", buffer);
+       printf("Voce: ");
+       fflush(stdout); 
+    }
+}
+
 
 int main(){
     printf("Bem vindo ao RChat\n\n");
@@ -78,26 +93,39 @@ int main(){
 
     printf("cliente conectado: %s\n", inet_ntoa(clientAddr.sin_addr));
 
+    HANDLE thread;
+    unsigned threadID;
+    thread = (HANDLE)_beginthreadex(NULL, 0, receber, (void*)&client_socket, 0, &threadID);
+
     while (1){
-        memset(buffer, 0, sizeof(buffer));
-        int bytes = recv(client_socket, buffer, sizeof(buffer) -1, 0);
-
-        if (bytes <= 0){
-            printf("conexao encerrada\n");
-            break;
-        }
-
-        buffer[bytes] = '\0';
-        printf("cliente: %s\n", buffer);
-
-        if (strcmp(buffer, "/exit") == 0) break;
-        printf("voce: ");
+        char msg[512];
         fgets(msg, sizeof(msg), stdin);
         msg[strcspn(msg, "\n")] = 0;
-        send(client_socket, msg, (int)strlen(msg), 0);
-
+        send(client_socket, msg, strlen(msg), 0);
         if (strcmp(msg, "/exit") == 0) break;
     }
+    
+
+    // while (1){
+    //     memset(buffer, 0, sizeof(buffer));
+    //     int bytes = recv(client_socket, buffer, sizeof(buffer) -1, 0);
+
+    //     if (bytes <= 0){
+    //         printf("conexao encerrada\n");
+    //         break;
+    //     }
+
+    //     buffer[bytes] = '\0';
+    //     printf("cliente: %s\n", buffer);
+
+    //     if (strcmp(buffer, "/exit") == 0) break;
+    //     printf("voce: ");
+    //     fgets(msg, sizeof(msg), stdin);
+    //     msg[strcspn(msg, "\n")] = 0;
+    //     send(client_socket, msg, (int)strlen(msg), 0);
+
+    //     if (strcmp(msg, "/exit") == 0) break;
+    // }
     
     closesocket(client_socket);
     closesocket(listen_socket);
