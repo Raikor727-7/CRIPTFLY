@@ -1,4 +1,5 @@
 //includes para ser utilizados
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <stdio.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -59,7 +60,16 @@ void modo_Cliente(){
     //estruturar ips e porta
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(port);
-    inet_pton(AF_INET, ip, &serverAddr.sin_addr);
+    // inet_pton(AF_INET, ip, &serverAddr.sin_addr);
+    struct hostent *he = gethostbyname(ip);
+    if(he == NULL){
+        printf("Nao foi possivel resolver o host\n");
+        closesocket(client_socket);
+        WSACleanup();
+        return;
+    }
+    memcpy(&serverAddr.sin_addr, he->h_addr_list[0], he->h_length); //atencao!!!
+
 
     //conexao com o servidor
     if (connect(client_socket, (SOCKADDR*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR){
