@@ -1,3 +1,4 @@
+//includes para ser utilizados
 #include <stdio.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -7,21 +8,28 @@
 
 #pragma comment(lib, "Ws2_32.lib")
 
+//threads para receber todo tempo
 unsigned __stdcall receber(void *socket_desc){
-    SOCKET sock = *(SOCKET*)socket_desc;
+    SOCKET sock = *(SOCKET*)socket_desc; //gerasocket
     char buffer[512];
     int bytes;
 
+    //receber toda mensagem
     while((bytes = recv(sock, buffer, sizeof(buffer) -1, 0)) > 0){
         buffer[bytes] = '\0';
         printf("servidor: %s\n", buffer);
-        printf("Voce: ");
+        if(strcmp(buffer, "/exit") == 0){
+            printf("\033[31mconexao encerrada\n\033[0m");
+        }
+        printf("Voce: \n");
         fflush(stdout);
     }
     return 0;
 }
 
+//app de cliente
 void modo_Cliente(){
+    //definicoes e gerando todos sockets e tipos
     WSADATA wsadata;
     SOCKET client_socket;
     SOCKET connect_socket;
@@ -29,6 +37,7 @@ void modo_Cliente(){
     char ip[32];
     int port;
 
+    //gerando wsastartup
     if (WSAStartup(MAKEWORD(2,2), &wsadata) != 0){
         printf("erro ao iniciar WSA\n");
         return;
@@ -47,6 +56,7 @@ void modo_Cliente(){
         return;
     }
 
+    //estruturar ips e porta
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(port);
     inet_pton(AF_INET, ip, &serverAddr.sin_addr);
@@ -61,10 +71,12 @@ void modo_Cliente(){
 
     printf("conexao realizada!!\n");
 
+    //abertura de threads
     HANDLE thread;
     unsigned threadID;
     thread = (HANDLE)_beginthreadex(NULL, 0, receber, (void*)&client_socket, 0, &threadID);
 
+    //recebimento de mensagens
     while(1){
         char mensagem[512];
         fgets(mensagem, sizeof(mensagem), stdin);
@@ -74,6 +86,7 @@ void modo_Cliente(){
         if(strcmp(mensagem, "/exit") == 0) break; 
     }
 
+    //fechamento e encerramento de programa
     closesocket(client_socket);
     WSACleanup();
 }
@@ -117,6 +130,7 @@ void modo_Servidor(){
         return;
     }
 
+    //aguardar conexao
     if(listen(listen_socket, SOMAXCONN) == SOCKET_ERROR){
         printf("erro no listen\n");
         closesocket(listen_socket);
@@ -129,6 +143,7 @@ void modo_Servidor(){
     struct hostent *host_entry;
     char *ip;
 
+    //conexao feita
     if (gethostname(host, sizeof(host)) == SOCKET_ERROR) {
         printf("Erro ao obter hostname\n");
     } else {
@@ -141,6 +156,7 @@ void modo_Servidor(){
         }
     }
 
+    //aceitar cliente
     client_socket = accept(listen_socket, (SOCKADDR*)&clientAddr, &clientAddrLen);
     if (client_socket == SOCKET_ERROR){
         printf("erro no accept\n");
@@ -151,6 +167,7 @@ void modo_Servidor(){
 
     printf("cliente conectado: %s\n", inet_ntoa(clientAddr.sin_addr));
 
+    //inicio de thread
     HANDLE thread;
     unsigned threadID;
     thread = (HANDLE)_beginthreadex(NULL, 0, receber, (void*)&client_socket, 0, &threadID);
@@ -172,15 +189,21 @@ void modo_Servidor(){
 int main(){
     while(1){
         int opcao;
-        printf("Escolha o modo:\n1- Servidor\n2- Cliente\nOpcao: ");
+        printf("Escolha o modo:\n1- Servidor\n2- Cliente\n99- Sair\nOpcao: ");
         scanf("%d", &opcao);
         getchar();
 
         if(opcao == 1){
             modo_Servidor();
+            printf("conexao encerrada...");
+            Sleep(2000);
+            system("cls");
         }
         else if(opcao == 2){
             modo_Cliente();
+            printf("conexao encerrada...");
+            Sleep(2000);
+            system("cls");
         }
         else if(opcao == 99){
             break;
