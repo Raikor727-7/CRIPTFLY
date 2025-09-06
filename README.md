@@ -31,8 +31,8 @@ Como executar
 
 Compile o código com:
 
-gcc criptfly.c -o criptfly -lws2_32   # Windows
-gcc criptfly.c -o criptfly             # Linux
+gcc RCHAT.c -o criptfly -lws2_32   # Windows
+gcc RCHAT_L.c -o criptfly             # Linux
 
 
 Execute:
